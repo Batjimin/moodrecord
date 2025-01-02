@@ -58,19 +58,43 @@ class _MyHomePageState extends State<MyHomePage> {
   final ScrollController _horizontalController = ScrollController();
   int currentStartColumn = 0;
   final double columnWidth = 50.0;
+  final double sideMargin = 45.0;
+
+  // 월 이름 리스트 추가
+  final List<String> months = [
+    'JAN',
+    'FEB',
+    'MAR',
+    'APR',
+    'MAY',
+    'JUN',
+    'JUL',
+    'AUG',
+    'SEP',
+    'OCT',
+    'NOV',
+    'DEC'
+  ];
 
   void _scrollHorizontally(bool toRight) {
     int newStartColumn = toRight
-        ? (currentStartColumn + 1).clamp(0, 10)
-        : (currentStartColumn - 1).clamp(0, 10);
+        ? (currentStartColumn + 1).clamp(0, 11)
+        : (currentStartColumn - 1).clamp(0, 11);
 
     if (newStartColumn != currentStartColumn) {
       setState(() {
         currentStartColumn = newStartColumn;
       });
 
+      double targetScroll;
+      if (newStartColumn == 11) {
+        targetScroll = 11.5 * (columnWidth + 2);
+      } else {
+        targetScroll = newStartColumn * (columnWidth + 2);
+      }
+
       _horizontalController.animateTo(
-        currentStartColumn * (columnWidth + 2),
+        targetScroll,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
@@ -78,9 +102,30 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _horizontalController.jumpTo(0);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Calendar',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
       body: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: MediaQuery.of(context).size.width / 2,
@@ -103,6 +148,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           physics: const NeverScrollableScrollPhysics(),
                           child: Row(
                             children: [
+                              SizedBox(width: sideMargin),
                               SingleChildScrollView(
                                 child: Column(
                                   children: List.generate(31, (row) {
@@ -132,14 +178,14 @@ class _MyHomePageState extends State<MyHomePage> {
                                   }),
                                 ),
                               ),
-                              SizedBox(width: columnWidth * 3),
+                              SizedBox(width: sideMargin * 1.5),
                             ],
                           ),
                         ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.arrow_right),
-                        onPressed: currentStartColumn < 10
+                        onPressed: currentStartColumn < 11
                             ? () => _scrollHorizontally(true)
                             : null,
                       ),
@@ -149,7 +195,21 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             ),
           ),
-          Expanded(child: Container()),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 28, 32, 0),
+              child: Text(
+                months[currentStartColumn],
+                style: const TextStyle(
+                  fontSize: 72,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                  height: 1,
+                  letterSpacing: -2,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
