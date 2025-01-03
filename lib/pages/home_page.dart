@@ -15,6 +15,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int currentStartColumn = 0;
   final double columnWidth = 50.0;
   final double sideMargin = 45.0;
+  final DateTime _currentYear = DateTime.now();
 
   final List<String> months = [
     'JAN',
@@ -30,6 +31,10 @@ class _MyHomePageState extends State<MyHomePage> {
     'NOV',
     'DEC'
   ];
+
+  int _getDaysInMonth(int month) {
+    return DateTime(_currentYear.year, month + 1, 0).day;
+  }
 
   void _scrollHorizontally(bool toRight) {
     int newStartColumn = toRight
@@ -109,23 +114,31 @@ class _MyHomePageState extends State<MyHomePage> {
                                   children: List.generate(31, (row) {
                                     return Row(
                                       children: List.generate(12, (col) {
+                                        int daysInMonth =
+                                            _getDaysInMonth(col + 1);
+                                        bool isValidDay = row < daysInMonth;
+
                                         return GestureDetector(
-                                          onTap: () {
-                                            print(
-                                                'Clicked: Row ${row + 1}, Column ${col + 1}');
-                                          },
+                                          onTap: isValidDay
+                                              ? () {
+                                                  print(
+                                                      'Clicked: Row ${row + 1}, Column ${col + 1}');
+                                                }
+                                              : null,
                                           child: Container(
                                             width: columnWidth,
                                             height: 50,
                                             margin: const EdgeInsets.all(1),
-                                            decoration: BoxDecoration(
-                                              border: Border.all(
-                                                color: Colors.grey
-                                                    .withOpacity(0.3),
-                                                width: 0.5,
-                                              ),
-                                              color: Colors.white,
-                                            ),
+                                            decoration: isValidDay
+                                                ? BoxDecoration(
+                                                    border: Border.all(
+                                                      color: Colors.grey
+                                                          .withOpacity(0.3),
+                                                      width: 0.5,
+                                                    ),
+                                                    color: Colors.white,
+                                                  )
+                                                : null,
                                           ),
                                         );
                                       }),
