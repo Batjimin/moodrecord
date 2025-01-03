@@ -16,6 +16,8 @@ class _MyHomePageState extends State<MyHomePage> {
   final double columnWidth = 50.0;
   final double sideMargin = 45.0;
   final DateTime _currentYear = DateTime.now();
+  Color? selectedMoodColor;
+  int selectedMonthIndex = 0;
 
   final List<String> months = [
     'JAN',
@@ -31,6 +33,16 @@ class _MyHomePageState extends State<MyHomePage> {
     'NOV',
     'DEC'
   ];
+
+  final Map<String, Color> moodColors = {
+    'perfect': const Color(0xFFFFB7ED), // 파스텔 핑크
+    'great': const Color(0xFFFFD9B7), // 파스텔 오렌지
+    'good': const Color(0xFFB7FFD8), // 파스텔 그린
+    'angry': const Color(0xFFFFB7B7), // 파스텔 레드
+    'sad': const Color(0xFFB7E5FF), // 파스텔 블루
+    'tired': const Color(0xFFE0E0E0), // 파스텔 그레이
+    'surprised': const Color(0xFFFFFDB7), // 파스텔 옐로우
+  };
 
   int _getDaysInMonth(int month) {
     return DateTime(_currentYear.year, month + 1, 0).day;
@@ -69,6 +81,53 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Widget _buildColorPalette() {
+    return Container(
+      margin: const EdgeInsets.only(left: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: moodColors.entries.map((entry) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedMoodColor = entry.value;
+                });
+              },
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: entry.value,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    entry.key,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  bool _isToday(int row, int col) {
+    final now = DateTime.now();
+    return row + 1 == now.day && col == now.month - 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
           style: TextStyle(
             color: Colors.black,
             fontSize: 20,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ),
@@ -136,7 +195,31 @@ class _MyHomePageState extends State<MyHomePage> {
                                                           .withOpacity(0.3),
                                                       width: 0.5,
                                                     ),
-                                                    color: Colors.white,
+                                                    color: _isToday(row, col) &&
+                                                            selectedMoodColor !=
+                                                                null
+                                                        ? selectedMoodColor
+                                                        : Colors.white,
+                                                  )
+                                                : null,
+                                            child: isValidDay &&
+                                                    months[currentStartColumn] ==
+                                                        months[col]
+                                                ? Center(
+                                                    child: Text(
+                                                      '${row + 1}',
+                                                      style: TextStyle(
+                                                        color: _isToday(
+                                                                    row, col) &&
+                                                                selectedMoodColor !=
+                                                                    null
+                                                            ? Colors.white
+                                                            : Colors.black87,
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
                                                   )
                                                 : null,
                                           ),
@@ -164,18 +247,63 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(0, 28, 32, 0),
-              child: Text(
-                months[currentStartColumn],
-                style: GoogleFonts.bungeeHairline(
-                  fontSize: 72,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                  height: 1,
-                  letterSpacing: -2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 28, 32, 0),
+                  child: Text(
+                    months[currentStartColumn],
+                    style: GoogleFonts.bungeeHairline(
+                      fontSize: 72,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                      height: 1,
+                      letterSpacing: -2,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                Container(
+                  margin: const EdgeInsets.only(left: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: moodColors.entries.map((entry) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedMoodColor = entry.value;
+                            });
+                          },
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: entry.value,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                entry.key,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
