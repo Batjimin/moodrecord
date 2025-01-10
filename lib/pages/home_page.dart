@@ -107,22 +107,13 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: TextButton(
-            onPressed: () => showDialog(
-              context: context,
-              builder: (context) => ResetDialog(onReset: _resetAllColors),
-            ),
-            child: const Text(
-              'Reset',
-              style: TextStyle(
-                color: Colors.black54,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+        IconButton(
+          icon: const Icon(Icons.share, color: Colors.black54),
+          onPressed: () {},
+        ),
+        IconButton(
+          icon: const Icon(Icons.save_alt, color: Colors.black54),
+          onPressed: () {},
         ),
       ],
     );
@@ -188,6 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
             onMoodSelected: (color) =>
                 setState(() => selectedMoodColor = color),
             onSaveColor: _saveColor,
+            onReset: _resetAllColors,
           ),
         ],
       ),

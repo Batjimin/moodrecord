@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import '../models/mood_color.dart';
 import '../pages/custom_color_page.dart';
+import '../widgets/reset_dialog.dart';
 
 class MoodSelector extends StatelessWidget {
   final Function(Color) onMoodSelected;
   final Function(int, int, Color) onSaveColor;
+  final Function() onReset;
 
   const MoodSelector({
     super.key,
     required this.onMoodSelected,
     required this.onSaveColor,
+    required this.onReset,
   });
 
   @override
@@ -53,30 +56,78 @@ class MoodSelector extends StatelessWidget {
             );
           }),
           const SizedBox(height: 16),
-          Center(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[300],
-                minimumSize: const Size(120, 40),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CustomColorPage(),
+          SizedBox(
+            width: 150,
+            child: Column(
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    minimumSize: const Size.fromHeight(40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
-                );
-              },
-              child: const Text(
-                'Custom',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w600,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CustomColorPage(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Custom',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    minimumSize: const Size.fromHeight(40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onPressed: () {
+                    // TODO: Implement record functionality
+                  },
+                  child: const Text(
+                    'Record',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    minimumSize: const Size.fromHeight(40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => ResetDialog(onReset: onReset),
+                    );
+                  },
+                  child: const Text(
+                    'RESET',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
