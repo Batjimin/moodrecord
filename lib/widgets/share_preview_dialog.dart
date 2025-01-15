@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import '../models/calendar_data.dart';
 import '../models/mood_color.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
 
 class SharePreviewDialog extends StatelessWidget {
   final CalendarData calendarData;
   final double cellSize = 12.0;
+  final GlobalKey _boundaryKey = GlobalKey();
 
-  const SharePreviewDialog({
+  SharePreviewDialog({
     super.key,
     required this.calendarData,
   });
@@ -36,32 +41,43 @@ class SharePreviewDialog extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CustomPaint(
-                    size: Size(12 * cellSize, 31 * cellSize),
-                    painter: CalendarPreviewPainter(
-                      calendarData: calendarData,
-                      cellSize: cellSize,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              RepaintBoundary(
+                key: _boundaryKey,
+                child: Container(
+                  color: Colors.white,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        '${DateTime.now().year}',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CustomPaint(
+                            size: Size(12 * cellSize, 31 * cellSize),
+                            painter: CalendarPreviewPainter(
+                              calendarData: calendarData,
+                              cellSize: cellSize,
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${DateTime.now().year}',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              ..._buildLegend(),
+                            ],
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      ..._buildLegend(),
                     ],
                   ),
-                ],
+                ),
               ),
               const SizedBox(height: 16),
               Row(
@@ -134,23 +150,32 @@ class SharePreviewDialog extends StatelessWidget {
   }
 
   Future<void> _saveToClipboard(BuildContext context) async {
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    final size = Size(12 * cellSize, 31 * cellSize);
+    try {
+      final boundary = _boundaryKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return;
 
-    final painter = CalendarPreviewPainter(
-      calendarData: calendarData,
-      cellSize: cellSize,
-    );
-    painter.paint(canvas, size);
+      final image = await boundary.toImage(pixelRatio: 2.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
-    final picture = recorder.endRecording();
-    final img = await picture.toImage(
-      (12 * cellSize).toInt(),
-      (31 * cellSize).toInt(),
-    );
-    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-    // TODO: Implement save functionality
+      if (byteData != null) {
+        final bytes = byteData.buffer.asUint8List();
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/mood_calendar.png');
+        await file.writeAsBytes(bytes);
+
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          subject: 'Mood Calendar',
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save image: $e')),
+        );
+      }
+    }
   }
 }
 
