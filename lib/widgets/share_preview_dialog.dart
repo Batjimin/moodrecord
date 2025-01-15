@@ -45,6 +45,10 @@ class SharePreviewDialog extends StatelessWidget {
                 key: _boundaryKey,
                 child: Container(
                   color: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 24.0,
+                    horizontal: 8.0,
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -58,7 +62,7 @@ class SharePreviewDialog extends StatelessWidget {
                               cellSize: cellSize,
                             ),
                           ),
-                          const SizedBox(width: 20),
+                          const SizedBox(width: 12),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -69,7 +73,7 @@ class SharePreviewDialog extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 12),
                               ..._buildLegend(),
                             ],
                           ),
