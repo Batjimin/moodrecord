@@ -26,7 +26,7 @@ class SharePreviewDialog extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Title',
+                    'SHARE',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
@@ -69,7 +69,14 @@ class SharePreviewDialog extends StatelessWidget {
                 children: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
+                    child: const Text(
+                      'CANCLE',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
@@ -83,7 +90,13 @@ class SharePreviewDialog extends StatelessWidget {
                         Navigator.pop(context);
                       }
                     },
-                    child: const Text('Save'),
+                    child: const Text(
+                      'SAVE',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -108,7 +121,11 @@ class SharePreviewDialog extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               entry.key,
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
