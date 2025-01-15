@@ -4,7 +4,8 @@ import '../services/storage_service.dart';
 import '../widgets/calendar_grid.dart';
 import '../widgets/mood_selector.dart';
 import '../widgets/month_header.dart';
-import '../widgets/reset_dialog.dart';
+import '../widgets/share_preview_dialog.dart';
+import '../models/mood_color.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -29,6 +30,8 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _loadColors();
+    _initializeCustomColors();
+    MoodColor.addListener(_onMoodColorsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _horizontalController.jumpTo(0);
     });
@@ -36,10 +39,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _loadColors() async {
     final colors = await _storageService.loadColors();
-    setState(() {
-      _calendarData.savedColors.clear();
-      _calendarData.savedColors.addAll(colors);
-    });
+    if (mounted) {
+      setState(() {
+        _calendarData.updateColors(colors);
+      });
+    }
   }
 
   Future<void> _saveColor(int day, int month, Color color) async {
@@ -80,6 +84,18 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<void> _initializeCustomColors() async {
+    await MoodColor.initializeColors();
+    setState(() {}); // UI 업데이트를 위해 setState 호출
+  }
+
+  void _onMoodColorsChanged() async {
+    final colors = await _storageService.loadColors();
+    setState(() {
+      _calendarData.updateColors(colors);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -109,7 +125,14 @@ class _MyHomePageState extends State<MyHomePage> {
       actions: [
         IconButton(
           icon: const Icon(Icons.share, color: Colors.black54),
-          onPressed: () {},
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => SharePreviewDialog(
+                calendarData: _calendarData,
+              ),
+            );
+          },
         ),
         IconButton(
           icon: const Icon(Icons.save_alt, color: Colors.black54),
@@ -189,6 +212,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
+    MoodColor.removeListener(_onMoodColorsChanged);
     _horizontalController.dispose();
     super.dispose();
   }
