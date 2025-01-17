@@ -10,11 +10,15 @@ import 'dart:io';
 class SharePreviewDialog extends StatelessWidget {
   final CalendarData calendarData;
   final double cellSize = 12.0;
+  final GlobalKey? previewKey;
   final GlobalKey _boundaryKey = GlobalKey();
+  final bool showShareButton;
 
   SharePreviewDialog({
     super.key,
     required this.calendarData,
+    this.previewKey,
+    this.showShareButton = true,
   });
 
   @override
@@ -42,7 +46,7 @@ class SharePreviewDialog extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               RepaintBoundary(
-                key: _boundaryKey,
+                key: previewKey ?? _boundaryKey,
                 child: Container(
                   color: Colors.white,
                   padding: const EdgeInsets.symmetric(
@@ -111,7 +115,7 @@ class SharePreviewDialog extends StatelessWidget {
                       }
                     },
                     child: const Text(
-                      'SAVE',
+                      'SHARE',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/mood_color.dart';
 import '../pages/custom_color_page.dart';
 import '../widgets/reset_dialog.dart';
+import '../pages/gallery_page.dart';
 
 class MoodSelector extends StatelessWidget {
   final Function(Color) onMoodSelected;
@@ -94,7 +95,12 @@ class MoodSelector extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    // TODO: Implement record functionality
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const GalleryPage(),
+                      ),
+                    );
                   },
                   child: const Text(
                     'Record',

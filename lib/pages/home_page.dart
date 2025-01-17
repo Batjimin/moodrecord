@@ -6,6 +6,11 @@ import '../widgets/mood_selector.dart';
 import '../widgets/month_header.dart';
 import '../widgets/share_preview_dialog.dart';
 import '../models/mood_color.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/rendering.dart';
+import 'dart:ui' as ui;
+import './gallery_page.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -114,9 +119,9 @@ class _MyHomePageState extends State<MyHomePage> {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      title: const Text(
-        'Calendar',
-        style: TextStyle(
+      title: Text(
+        '${DateTime.now().year}',
+        style: const TextStyle(
           color: Colors.black,
           fontSize: 20,
           fontWeight: FontWeight.w800,
@@ -136,10 +141,136 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         IconButton(
           icon: const Icon(Icons.save_alt, color: Colors.black54),
-          onPressed: () {},
+          onPressed: () async {
+            await _saveCalendarImage();
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const GalleryPage(),
+                ),
+              );
+            }
+          },
         ),
       ],
     );
+  }
+
+  Future<void> _saveCalendarImage() async {
+    try {
+      final boundary = GlobalKey();
+      final previewWidget = RepaintBoundary(
+        key: boundary,
+        child: Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(
+            vertical: 24.0,
+            horizontal: 8.0,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CustomPaint(
+                size: const Size(144, 372),
+                painter: CalendarPreviewPainter(
+                  calendarData: _calendarData,
+                  cellSize: 12.0,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${DateTime.now().year}',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: Colors.black,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...MoodColor.moodColors.entries.map((entry) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              color: entry.value,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              entry.key,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.black,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      )),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+
+      // 오프스크린 렌더링을 위해 Overlay 사용
+      final overlay = OverlayEntry(
+        builder: (context) => Positioned(
+          left: -99999,
+          child: previewWidget,
+        ),
+      );
+
+      Overlay.of(context).insert(overlay);
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      final renderObject =
+          boundary.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (renderObject == null) {
+        overlay.remove();
+        return;
+      }
+
+      final image = await renderObject.toImage(pixelRatio: 2.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      overlay.remove();
+
+      if (byteData != null) {
+        final bytes = byteData.buffer.asUint8List();
+        final directory = await getApplicationDocumentsDirectory();
+        final savedImagesDir = Directory('${directory.path}/saved_calendars');
+
+        if (!await savedImagesDir.exists()) {
+          await savedImagesDir.create(recursive: true);
+        }
+
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final file = File('${savedImagesDir.path}/calendar_$timestamp.png');
+        await file.writeAsBytes(bytes);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Calendar saved successfully')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save calendar: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildCalendarSection() {
