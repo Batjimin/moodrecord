@@ -71,17 +71,17 @@ class MoodSelector extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  onPressed: () async {
-                    final result = await Navigator.push(
+                  onPressed: () {
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const CustomColorPage(),
                       ),
-                    );
-                    if (result != null) {
-                      onCustomColorPressed();
-                      return;
-                    }
+                    ).then((result) {
+                      if (result != null) {
+                        onCustomColorPressed();
+                      }
+                    });
                   },
                   child: const Text(
                     'Custom',

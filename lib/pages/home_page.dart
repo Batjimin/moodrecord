@@ -334,17 +334,10 @@ class _MyHomePageState extends State<MyHomePage> {
     _saveColor(now.day, now.month - 1, color);
   }
 
-  void _onCustomColorPressed() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CustomColorPage()),
-    );
-
-    if (result != null && mounted) {
-      setState(() {
-        _calendarData.updateColors(result);
-      });
-    }
+  void _onCustomColorPressed() {
+    setState(() {
+      _loadColors();
+    });
   }
 
   @override
