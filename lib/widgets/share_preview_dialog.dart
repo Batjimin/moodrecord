@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
@@ -5,20 +7,27 @@ import '../models/calendar_data.dart';
 import '../models/mood_color.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'dart:io';
 
 class SharePreviewDialog extends StatelessWidget {
   final CalendarData calendarData;
+  final bool onlyCapture;
   final double cellSize = 12.0;
   final GlobalKey _boundaryKey = GlobalKey();
 
   SharePreviewDialog({
     super.key,
     required this.calendarData,
+    this.onlyCapture = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (onlyCapture) {
+      // 캡처만 수행하고 바로 닫기
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).pop();
+      });
+    }
     return Dialog(
       child: SingleChildScrollView(
         child: Container(
@@ -111,7 +120,7 @@ class SharePreviewDialog extends StatelessWidget {
                       }
                     },
                     child: const Text(
-                      'SAVE',
+                      'SHARE',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -155,31 +164,81 @@ class SharePreviewDialog extends StatelessWidget {
 
   Future<void> _saveToClipboard(BuildContext context) async {
     try {
-      final boundary = _boundaryKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (boundary == null) return;
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
 
-      final image = await boundary.toImage(pixelRatio: 2.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      // Compute image in a separate isolate or at least in the next frame
+      await Future.microtask(() async {
+        final boundary = _boundaryKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
+        if (boundary == null) return;
 
-      if (byteData != null) {
-        final bytes = byteData.buffer.asUint8List();
-        final tempDir = await getTemporaryDirectory();
-        final file = File('${tempDir.path}/mood_calendar.png');
-        await file.writeAsBytes(bytes);
+        final image = await boundary.toImage(pixelRatio: 2.0);
+        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          subject: 'Mood Calendar',
-        );
-      }
+        if (byteData != null) {
+          final bytes = byteData.buffer.asUint8List();
+          final tempDir = await getTemporaryDirectory();
+          final file = File('${tempDir.path}/mood_calendar.png');
+          await file.writeAsBytes(bytes);
+
+          if (context.mounted) {
+            Navigator.pop(context); // Close loading indicator
+            await Share.shareXFiles(
+              [XFile(file.path)],
+              subject: 'Mood Calendar',
+            );
+          }
+        }
+      });
     } catch (e) {
       if (context.mounted) {
+        Navigator.pop(context); // Close loading indicator
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save image: $e')),
         );
       }
     }
+  }
+
+  static Future<Uint8List?> captureCalendarImage(
+    CalendarData calendarData,
+    GlobalKey boundaryKey,
+  ) async {
+    try {
+      // 더 긴 지연 시간 추가
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final boundary = boundaryKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+
+      // 더 낮은 해상도로 캡처
+      final image = await boundary.toImage(pixelRatio: 0.5);
+
+      // 비동기 작업 사이에 약간의 지연 추가
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+      return byteData?.buffer.asUint8List();
+    } catch (e) {
+      print('Error capturing calendar image: $e');
+      return null;
+    }
+  }
+
+  Future<Uint8List?> captureImage() async {
+    return await SharePreviewDialog.captureCalendarImage(
+      calendarData,
+      _boundaryKey,
+    );
   }
 }
 
@@ -199,12 +258,12 @@ class CalendarPreviewPainter extends CustomPainter {
     // Draw grid
     for (int month = 0; month < 12; month++) {
       for (int day = 1; day <= 31; day++) {
-        if (day <= calendarData.getDaysInMonth(month)) {
+        if (day <= calendarData.getDaysInMonth(month + 1)) {
           final rect = Rect.fromLTWH(
             month * cellSize,
             (day - 1) * cellSize,
-            cellSize - 1,
-            cellSize - 1,
+            cellSize,
+            cellSize,
           );
 
           // Draw cell background
@@ -215,6 +274,7 @@ class CalendarPreviewPainter extends CustomPainter {
           // Draw border
           paint.color = Colors.grey[300]!;
           paint.style = PaintingStyle.stroke;
+          paint.strokeWidth = 0.5;
           canvas.drawRect(rect, paint);
           paint.style = PaintingStyle.fill;
         }

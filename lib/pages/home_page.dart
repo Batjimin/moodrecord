@@ -6,6 +6,8 @@ import '../widgets/mood_selector.dart';
 import '../widgets/month_header.dart';
 import '../widgets/share_preview_dialog.dart';
 import '../models/mood_color.dart';
+import '../pages/record_page.dart';
+import 'dart:ui' as ui;
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -20,6 +22,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final ScrollController _horizontalController = ScrollController();
   final StorageService _storageService = StorageService();
   final CalendarData _calendarData = CalendarData();
+  final GlobalKey _boundaryKey = GlobalKey();
 
   int currentStartColumn = 0;
   Color? selectedMoodColor;
@@ -31,6 +34,8 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _loadColors();
     _initializeCustomColors();
+    _checkYearChange();
+    _calendarData.cleanupData();
     MoodColor.addListener(_onMoodColorsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _horizontalController.jumpTo(0);
@@ -96,16 +101,40 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void _checkYearChange() async {
+    if (_calendarData.shouldResetCalendar(testDate: DateTime(2026, 1, 1))) {
+      print('Saving calendar record for year ${_calendarData.year}');
+      await _saveCurrentCalendarRecord();
+      await _resetAllColors();
+    }
+  }
+
+  Future<void> _saveCurrentCalendarRecord() async {
+    final imageBytes = await SharePreviewDialog.captureCalendarImage(
+      _calendarData,
+      _boundaryKey,
+    );
+    if (imageBytes != null) {
+      await _storageService.saveCalendarRecord(_calendarData.year, imageBytes);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildCalendarSection(),
-          _buildMoodSection(),
-        ],
+      body: RepaintBoundary(
+        key: _boundaryKey,
+        child: Container(
+          color: Colors.white,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildCalendarSection(),
+              _buildMoodSection(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -135,8 +164,24 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ),
         IconButton(
-          icon: const Icon(Icons.save_alt, color: Colors.black54),
-          onPressed: () {},
+          icon: const Icon(Icons.history, color: Colors.black54),
+          onPressed: () async {
+            try {
+              await _storageService.deleteCalendarRecord(2025);
+
+              final dialog = SharePreviewDialog(
+                calendarData: _calendarData,
+              );
+
+              final imageBytes = await dialog.captureImage();
+              if (imageBytes != null) {
+                await _storageService.saveCalendarRecord(2025, imageBytes);
+                print('Successfully saved calendar record for year 2025');
+              }
+            } catch (e) {
+              print('Error saving calendar record: $e');
+            }
+          },
         ),
       ],
     );

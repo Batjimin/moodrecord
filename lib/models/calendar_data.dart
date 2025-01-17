@@ -2,25 +2,38 @@ import 'package:flutter/material.dart';
 import '../models/mood_color.dart';
 
 class CalendarData {
-  final DateTime currentYear;
+  final int year;
   Map<String, Color> savedColors;
 
   CalendarData({
-    DateTime? currentYear,
+    int? year,
     Map<String, Color>? savedColors,
-  })  : currentYear = currentYear ?? DateTime.now(),
+  })  : year = year ?? DateTime.now().year,
         savedColors = savedColors ?? {};
 
   String getKey(int day, int month) {
-    final adjustedMonth = month + 1;
-    return '${currentYear.year}-$adjustedMonth-$day';
+    final adjustedMonth = month - 1;
+    return '$year-$adjustedMonth-$day';
+  }
+
+  bool shouldResetCalendar({DateTime? testDate}) {
+    final now = testDate ?? DateTime.now();
+    if (now.year > year) {
+      print('Year changed from $year to ${now.year}');
+      return true;
+    }
+    return false;
   }
 
   Color? getSavedColor(int day, int month) {
     final key = getKey(day, month);
     final savedColor = savedColors[key];
-    print('Getting color for $key: $savedColor'); // 디버깅용
-    return savedColor;
+
+    if (savedColor != null) {
+      print('Retrieved color for $key: $savedColor');
+      return savedColor;
+    }
+    return null;
   }
 
   // 색상 업데이트 메서드 추가
@@ -29,7 +42,7 @@ class CalendarData {
   }
 
   int getDaysInMonth(int month) {
-    return DateTime(currentYear.year, month + 1, 0).day;
+    return DateTime(year, month + 1, 0).day;
   }
 
   bool isToday(int day, int month) {
@@ -38,4 +51,17 @@ class CalendarData {
   }
 
   Map<String, Color> get moodColors => MoodColor.moodColors;
+
+  // 11월, 12월 데이터 정리
+  void cleanupData() {
+    final keysToRemove = savedColors.keys.where((key) {
+      final parts = key.split('-');
+      final month = int.parse(parts[1]);
+      return parts.length == 3 && month >= 12;
+    }).toList();
+
+    for (var key in keysToRemove) {
+      savedColors.remove(key);
+    }
+  }
 }

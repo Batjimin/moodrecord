@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../models/mood_color.dart';
 import '../pages/custom_color_page.dart';
 import '../widgets/reset_dialog.dart';
+import '../pages/record_page.dart';
+import '../services/storage_service.dart';
 
 class MoodSelector extends StatelessWidget {
   final Function(Color) onMoodSelected;
   final Function(int, int, Color) onSaveColor;
-  final Function() onReset;
+  final VoidCallback onReset;
 
   const MoodSelector({
     super.key,
@@ -94,10 +96,17 @@ class MoodSelector extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    // TODO: Implement record functionality
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RecordPage(
+                          storageService: StorageService(),
+                        ),
+                      ),
+                    );
                   },
                   child: const Text(
-                    'Record',
+                    'RECORD',
                     style: TextStyle(
                       color: Colors.black87,
                       fontWeight: FontWeight.w600,
