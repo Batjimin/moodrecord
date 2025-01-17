@@ -101,8 +101,17 @@ class _GalleryPageState extends State<GalleryPage> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.red,
                                       ),
-                                      icon: const Icon(Icons.delete),
-                                      label: const Text('Delete'),
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.white,
+                                      ),
+                                      label: const Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                       onPressed: () {
                                         showDialog(
                                           context: context,
@@ -162,8 +171,17 @@ class _GalleryPageState extends State<GalleryPage> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.deepPurple,
                                       ),
-                                      icon: const Icon(Icons.share),
-                                      label: const Text('Share'),
+                                      icon: const Icon(
+                                        Icons.share,
+                                        color: Colors.white,
+                                      ),
+                                      label: const Text(
+                                        'Share',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                       onPressed: () async {
                                         await Share.shareXFiles(
                                           [XFile(_savedImages[index].path)],

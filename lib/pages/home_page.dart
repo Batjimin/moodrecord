@@ -39,6 +39,7 @@ class _MyHomePageState extends State<MyHomePage> {
     MoodColor.addListener(_onMoodColorsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _horizontalController.jumpTo(0);
+      _checkNewYear();
     });
   }
 
@@ -101,63 +102,25 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildCalendarSection(),
-          _buildMoodSection(),
-        ],
-      ),
-    );
+  Future<void> _checkNewYear() async {
+    final now = DateTime.now();
+    if (now.month == 1 && now.day == 1) {
+      // 작년 달력 저장
+      await _saveCalendarImage(yearOffset: -1);
+      // 달력 초기화
+      await _resetAllColors();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content:
+                  Text('Happy New Year! Previous calendar has been saved.')),
+        );
+      }
+    }
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      title: Text(
-        '${DateTime.now().year}',
-        style: const TextStyle(
-          color: Colors.black,
-          fontSize: 20,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.share, color: Colors.black54),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => SharePreviewDialog(
-                calendarData: _calendarData,
-              ),
-            );
-          },
-        ),
-        IconButton(
-          icon: const Icon(Icons.save_alt, color: Colors.black54),
-          onPressed: () async {
-            await _saveCalendarImage();
-            if (mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const GalleryPage(),
-                ),
-              );
-            }
-          },
-        ),
-      ],
-    );
-  }
-
-  Future<void> _saveCalendarImage() async {
+  Future<void> _saveCalendarImage({int yearOffset = 0}) async {
     try {
       final boundary = GlobalKey();
       final previewWidget = RepaintBoundary(
@@ -184,7 +147,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${DateTime.now().year}',
+                    '${DateTime.now().year + yearOffset}',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           color: Colors.black,
                           fontSize: 24,
@@ -346,5 +309,57 @@ class _MyHomePageState extends State<MyHomePage> {
     MoodColor.removeListener(_onMoodColorsChanged);
     _horizontalController.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          '${DateTime.now().year}',
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 25,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share, color: Colors.black54),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => SharePreviewDialog(
+                  calendarData: _calendarData,
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.save_alt, color: Colors.black54),
+            onPressed: () async {
+              await _saveCalendarImage();
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GalleryPage(),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCalendarSection(),
+          _buildMoodSection(),
+        ],
+      ),
+    );
   }
 }
