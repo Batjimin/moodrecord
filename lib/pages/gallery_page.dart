@@ -12,18 +12,14 @@ class GalleryPage extends StatefulWidget {
 }
 
 class _GalleryPageState extends State<GalleryPage>
-    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with SingleTickerProviderStateMixin {
   Map<String, int> _savedImagesWithYear = {};
   late AnimationController _controller;
   late Animation<double> _animation;
 
   @override
-  bool get wantKeepAlive => true;
-
-  @override
   void initState() {
     super.initState();
-    _loadSavedImages();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -35,29 +31,61 @@ class _GalleryPageState extends State<GalleryPage>
     _controller.forward();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadSavedImages();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadSavedImages() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final savedImagesDir = Directory('${directory.path}/saved_calendars');
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final savedImagesDir = Directory('${directory.path}/saved_calendars');
+      debugPrint('Looking for images in: ${savedImagesDir.path}');
 
-    if (await savedImagesDir.exists()) {
-      final files = await savedImagesDir.list().toList();
-      final Map<String, int> newImages = {};
+      if (await savedImagesDir.exists()) {
+        final files = await savedImagesDir.list().toList();
+        final Map<String, int> newImages = {};
 
-      for (var file in files.whereType<File>()) {
-        if (file.path.endsWith('.png')) {
-          final match = RegExp(r'calendar_(\d{4})\.png').firstMatch(file.path);
-          if (match != null) {
-            final year = int.parse(match.group(1)!);
-            newImages[file.path] = year;
+        for (var file in files.whereType<File>()) {
+          if (file.path.endsWith('.png')) {
+            final match =
+                RegExp(r'calendar_(\d{4})_(\d+)\.png').firstMatch(file.path);
+            if (match != null) {
+              final year = int.parse(match.group(1)!);
+              newImages[file.path] = year;
+              debugPrint('Found calendar: ${file.path} for year $year');
+            }
           }
         }
-      }
 
-      if (mounted) {
-        setState(() {
-          _savedImagesWithYear = newImages;
-        });
+        if (mounted) {
+          setState(() {
+            _savedImagesWithYear = Map.fromEntries(
+              newImages.entries.toList()
+                ..sort((a, b) {
+                  final timestampA = int.parse(
+                      RegExp(r'_(\d+)\.png').firstMatch(a.key)?.group(1) ??
+                          '0');
+                  final timestampB = int.parse(
+                      RegExp(r'_(\d+)\.png').firstMatch(b.key)?.group(1) ??
+                          '0');
+                  return timestampB.compareTo(timestampA);
+                }),
+            );
+          });
+        }
+      } else {
+        debugPrint('Directory does not exist: ${savedImagesDir.path}');
       }
+    } catch (e) {
+      debugPrint('Error loading saved images: $e');
     }
   }
 
@@ -84,7 +112,6 @@ class _GalleryPageState extends State<GalleryPage>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(

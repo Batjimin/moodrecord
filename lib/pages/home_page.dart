@@ -130,56 +130,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _saveCalendarImage({int yearOffset = 0}) async {
     try {
-      final targetYear = DateTime.now().year + yearOffset;
       final directory = await getApplicationDocumentsDirectory();
       final savedImagesDir = Directory('${directory.path}/saved_calendars');
-
-      if (await savedImagesDir.exists()) {
-        final files = await savedImagesDir.list().toList();
-        final existingFile = files
-            .whereType<File>()
-            .where((file) => file.path.contains('calendar_$targetYear'))
-            .firstOrNull;
-
-        if (existingFile != null && mounted) {
-          final shouldReplace = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text(
-                'Replace Existing Calendar',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              content: Text(
-                'Calendar for $targetYear already exists. Do you want to replace it?',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      )),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Replace',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      )),
-                ),
-              ],
-            ),
-          );
-
-          if (shouldReplace != true) return;
-          await existingFile.delete();
-        }
-      } else {
+      if (!await savedImagesDir.exists()) {
         await savedImagesDir.create(recursive: true);
       }
+
+      final targetYear = DateTime.now().year + yearOffset;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'calendar_${targetYear}_$timestamp.png';
+      final file = File('${savedImagesDir.path}/$fileName');
+
+      debugPrint('Saving calendar to: ${file.path}'); // 디버그 로그 추가
 
       final boundary = GlobalKey();
       final previewWidget = RepaintBoundary(
@@ -268,8 +230,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
       if (byteData != null) {
         final bytes = byteData.buffer.asUint8List();
-        final file = File('${savedImagesDir.path}/calendar_$targetYear.png');
         await file.writeAsBytes(bytes);
+        debugPrint('Calendar saved successfully to: ${file.path}'); // 디버그 로그 추가
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -287,6 +249,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
     } catch (e) {
+      debugPrint('Error saving calendar: $e'); // 디버그 로그 추가
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to save calendar: $e')),
