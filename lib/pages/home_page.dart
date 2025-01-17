@@ -267,9 +267,14 @@ class _MyHomePageState extends State<MyHomePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Calendar saved successfully')),
           );
+
+          await Future.delayed(const Duration(milliseconds: 50));
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const GalleryPage()),
+            MaterialPageRoute(
+              builder: (context) => const GalleryPage(),
+              maintainState: true,
+            ),
           );
         }
       }
