@@ -12,20 +12,26 @@ class CalendarData {
         savedColors = savedColors ?? {};
 
   String getKey(int day, int month) {
-    final adjustedMonth = month + 1;
-    return '${currentYear.year}-$adjustedMonth-$day';
+    if (month < 0 || month > 11) {
+      debugPrint('Invalid month value: $month, adjusting...');
+      month = month.clamp(0, 11);
+    }
+    return '${currentYear.year}-$month-$day';
   }
 
   Color? getSavedColor(int day, int month) {
+    if (month < 0 || month > 11) {
+      debugPrint('Invalid month value in getSavedColor: $month');
+      month = month.clamp(0, 11);
+    }
     final key = getKey(day, month);
-    final savedColor = savedColors[key];
-    print('Getting color for $key: $savedColor'); // 디버깅용
-    return savedColor;
+    return savedColors[key];
   }
 
   // 색상 업데이트 메서드 추가
   void updateColors(Map<String, Color> newColors) {
-    savedColors = Map.from(newColors);
+    debugPrint('Updating calendar colors: $newColors');
+    savedColors = Map<String, Color>.from(newColors);
   }
 
   int getDaysInMonth(int month) {

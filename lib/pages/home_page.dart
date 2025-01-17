@@ -37,6 +37,10 @@ class _MyHomePageState extends State<MyHomePage> {
     _loadColors();
     _initializeCustomColors();
     MoodColor.addListener(_onMoodColorsChanged);
+
+    final now = DateTime.now();
+    debugPrint('Today: ${now.year}-${now.month}-${now.day}'); // 오늘 날짜 출력
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _horizontalController.jumpTo(0);
       _checkNewYear();
@@ -45,6 +49,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _loadColors() async {
     final colors = await _storageService.loadColors();
+    debugPrint('Loaded colors from storage: $colors'); // 로드된 색상 확인
+
     if (mounted) {
       setState(() {
         _calendarData.updateColors(colors);
@@ -54,7 +60,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _saveColor(int day, int month, Color color) async {
     final key = _calendarData.getKey(day, month);
+    debugPrint('Saving color with key: $key, color: $color'); // 저장 시점 확인
     await _storageService.saveColor(key, color);
+
     setState(() {
       _calendarData.savedColors[key] = color;
     });
@@ -345,14 +353,20 @@ class _MyHomePageState extends State<MyHomePage> {
           MonthHeader(currentStartColumn: currentStartColumn),
           const SizedBox(height: 24),
           MoodSelector(
-            onMoodSelected: (color) =>
-                setState(() => selectedMoodColor = color),
+            onMoodSelected: _onMoodSelected,
             onSaveColor: _saveColor,
             onReset: _resetAllColors,
           ),
         ],
       ),
     );
+  }
+
+  void _onMoodSelected(Color color) {
+    final now = DateTime.now();
+    selectedMoodColor = color;
+    // setState 밖에서 _saveColor 호출
+    _saveColor(now.day, now.month - 1, color);
   }
 
   @override

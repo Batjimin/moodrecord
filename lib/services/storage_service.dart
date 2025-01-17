@@ -24,14 +24,34 @@ class StorageService {
 
       if (await file.exists()) {
         final String contents = await file.readAsString();
-        allColors = Map<String, dynamic>.from(json.decode(contents));
+        if (contents.isNotEmpty) {
+          try {
+            allColors = json.decode(contents) as Map<String, dynamic>;
+
+            // 중복 키 정리 (예: 2025-0-17과 2025-1-17)
+            final parts = key.split('-');
+            if (parts.length == 3) {
+              final year = parts[0];
+              final day = parts[2];
+              // 같은 년도와 일자를 가진 모든 키 제거
+              allColors.removeWhere(
+                  (k, v) => k.startsWith('$year-') && k.endsWith('-$day'));
+            }
+          } catch (e) {
+            debugPrint('Error decoding JSON: $e');
+            allColors = {};
+          }
+        }
       }
 
+      // 새로운 색상 저장
       allColors[key] = color.value.toString();
-      await file.writeAsString(json.encode(allColors));
-      print('Saved color for $key: ${color.value}');
+
+      final jsonString = json.encode(allColors);
+      await file.writeAsString(jsonString);
+      debugPrint('Successfully saved color - Key: $key, JSON: $jsonString');
     } catch (e) {
-      print('Error saving color: $e');
+      debugPrint('Error in saveColor: $e');
     }
   }
 
@@ -42,23 +62,29 @@ class StorageService {
 
       if (await file.exists()) {
         final String contents = await file.readAsString();
-        final Map<String, dynamic> allColors =
-            Map<String, dynamic>.from(json.decode(contents));
-
-        allColors.forEach((key, value) {
+        if (contents.isNotEmpty) {
           try {
-            final colorValue = int.parse(value);
-            savedColors[key] = Color(colorValue);
-            print('Loaded color for $key: ${Color(colorValue)}');
+            final Map<String, dynamic> allColors =
+                json.decode(contents) as Map<String, dynamic>;
+            allColors.forEach((key, value) {
+              try {
+                final colorValue = int.parse(value.toString());
+                savedColors[key] = Color(colorValue);
+              } catch (e) {
+                debugPrint('Error parsing color value: $e');
+              }
+            });
           } catch (e) {
-            print('Error parsing color for key $key: $e');
+            debugPrint('Error decoding JSON: $e');
+            // 파일이 손상된 경우 초기화
+            await file.writeAsString('{}');
           }
-        });
+        }
       }
 
       return savedColors;
     } catch (e) {
-      print('Error loading colors: $e');
+      debugPrint('Error in loadColors: $e');
       return {};
     }
   }
