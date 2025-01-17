@@ -122,6 +122,57 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _saveCalendarImage({int yearOffset = 0}) async {
     try {
+      final targetYear = DateTime.now().year + yearOffset;
+      final directory = await getApplicationDocumentsDirectory();
+      final savedImagesDir = Directory('${directory.path}/saved_calendars');
+
+      if (await savedImagesDir.exists()) {
+        final files = await savedImagesDir.list().toList();
+        final existingFile = files
+            .whereType<File>()
+            .where((file) => file.path.contains('calendar_$targetYear'))
+            .firstOrNull;
+
+        if (existingFile != null && mounted) {
+          final shouldReplace = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text(
+                'Replace Existing Calendar',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: Text(
+                'Calendar for $targetYear already exists. Do you want to replace it?',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      )),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Replace',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      )),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldReplace != true) return;
+          await existingFile.delete();
+        }
+      } else {
+        await savedImagesDir.create(recursive: true);
+      }
+
       final boundary = GlobalKey();
       final previewWidget = RepaintBoundary(
         key: boundary,
@@ -186,7 +237,6 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
 
-      // 오프스크린 렌더링을 위해 Overlay 사용
       final overlay = OverlayEntry(
         builder: (context) => Positioned(
           left: -99999,
@@ -210,20 +260,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
       if (byteData != null) {
         final bytes = byteData.buffer.asUint8List();
-        final directory = await getApplicationDocumentsDirectory();
-        final savedImagesDir = Directory('${directory.path}/saved_calendars');
-
-        if (!await savedImagesDir.exists()) {
-          await savedImagesDir.create(recursive: true);
-        }
-
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final file = File('${savedImagesDir.path}/calendar_$timestamp.png');
+        final file = File('${savedImagesDir.path}/calendar_$targetYear.png');
         await file.writeAsBytes(bytes);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Calendar saved successfully')),
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const GalleryPage()),
           );
         }
       }
@@ -341,14 +387,6 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: const Icon(Icons.save_alt, color: Colors.black54),
             onPressed: () async {
               await _saveCalendarImage();
-              if (mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const GalleryPage(),
-                  ),
-                );
-              }
             },
           ),
         ],
