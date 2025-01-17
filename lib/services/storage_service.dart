@@ -108,25 +108,23 @@ class StorageService {
         final Map<String, dynamic> allColors =
             Map<String, dynamic>.from(json.decode(contents));
 
-        bool hasUpdates = false;
         // 모든 저장된 색상을 확인하고 업데이트
+        bool hasUpdates = false;
         allColors.forEach((key, value) {
           if (int.parse(value) == oldColor.value) {
             allColors[key] = newColor.value.toString();
             hasUpdates = true;
-            print(
-                'Updated color for $key: ${oldColor.value} -> ${newColor.value}');
           }
         });
 
         if (hasUpdates) {
           // 변경된 내용을 파일에 저장
           await file.writeAsString(json.encode(allColors));
-          print('Saved updated colors to file');
+          debugPrint('Updated colors saved to file');
         }
       }
     } catch (e) {
-      print('Error updating color mapping: $e');
+      debugPrint('Error updating color mapping: $e');
     }
   }
 

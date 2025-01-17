@@ -26,8 +26,6 @@ class _CustomColorPageState extends State<CustomColorPage> {
     // 변경된 색상에 대해서만 업데이트 수행
     for (var entry in tempColors.entries) {
       if (originalColors[entry.key] != entry.value) {
-        print(
-            'Updating color for ${entry.key}: ${originalColors[entry.key]} -> ${entry.value}');
         await _storageService.updateColorMapping(
           originalColors[entry.key]!,
           entry.value,
@@ -37,14 +35,14 @@ class _CustomColorPageState extends State<CustomColorPage> {
 
     // MoodColor 업데이트
     MoodColor.updateColors(Map.from(tempColors));
-
-    // 커스텀 색상 저장
     await _storageService.saveCustomColors(tempColors);
 
+    // 저장된 색상 다시 로드하여 캘린더 업데이트
+    final colors = await _storageService.loadColors();
+
     if (mounted) {
-      // 홈 페이지로 돌아가기 전에 약간의 지연을 주어 저장이 완료되도록 함
-      await Future.delayed(const Duration(milliseconds: 100));
-      Navigator.pop(context);
+      // 홈 페이지로 돌아가서 색상 업데이트
+      Navigator.pop(context, colors);
     }
   }
 

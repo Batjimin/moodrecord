@@ -8,12 +8,14 @@ class MoodSelector extends StatelessWidget {
   final Function(Color) onMoodSelected;
   final Function(int, int, Color) onSaveColor;
   final Function() onReset;
+  final Function() onCustomColorPressed;
 
   const MoodSelector({
     super.key,
     required this.onMoodSelected,
     required this.onSaveColor,
     required this.onReset,
+    required this.onCustomColorPressed,
   });
 
   @override
@@ -69,13 +71,17 @@ class MoodSelector extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const CustomColorPage(),
                       ),
                     );
+                    if (result != null) {
+                      onCustomColorPressed();
+                      return;
+                    }
                   },
                   child: const Text(
                     'Custom',

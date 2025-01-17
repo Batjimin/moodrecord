@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import './gallery_page.dart';
+import './custom_color_page.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -319,6 +320,7 @@ class _MyHomePageState extends State<MyHomePage> {
             onMoodSelected: _onMoodSelected,
             onSaveColor: _saveColor,
             onReset: _resetAllColors,
+            onCustomColorPressed: _onCustomColorPressed,
           ),
         ],
       ),
@@ -330,6 +332,19 @@ class _MyHomePageState extends State<MyHomePage> {
     selectedMoodColor = color;
     // setState 밖에서 _saveColor 호출
     _saveColor(now.day, now.month - 1, color);
+  }
+
+  void _onCustomColorPressed() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CustomColorPage()),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _calendarData.updateColors(result);
+      });
+    }
   }
 
   @override
