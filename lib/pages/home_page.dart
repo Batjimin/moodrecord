@@ -11,7 +11,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import './gallery_page.dart';
-import './custom_color_page.dart';
+import './settings_page.dart';
+import '../services/timezone_service.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -327,11 +328,10 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void _onMoodSelected(Color color) {
-    final now = DateTime.now();
+  void _onMoodSelected(Color color) async {
+    final now = await TimezoneService.getAdjustedTime();
     selectedMoodColor = color;
-    // setState 밖에서 _saveColor 호출
-    _saveColor(now.day, now.month - 1, color);
+    _saveColor(now.day, now.month, color);
   }
 
   void _onCustomColorPressed() {
@@ -349,45 +349,62 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          '${DateTime.now().year}',
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 25,
-            fontWeight: FontWeight.w800,
+    return FutureBuilder<DateTime>(
+      future: TimezoneService.getAdjustedTime(),
+      builder: (context, snapshot) {
+        final now = snapshot.data ?? DateTime.now();
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            title: Text(
+              '${now.year}',
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 25,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings, color: Colors.black54),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsPage(),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.share, color: Colors.black54),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => SharePreviewDialog(
+                      calendarData: _calendarData,
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.save_alt, color: Colors.black54),
+                onPressed: () async {
+                  await _saveCalendarImage();
+                },
+              ),
+            ],
           ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share, color: Colors.black54),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => SharePreviewDialog(
-                  calendarData: _calendarData,
-                ),
-              );
-            },
+          body: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildCalendarSection(),
+              _buildMoodSection(),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.save_alt, color: Colors.black54),
-            onPressed: () async {
-              await _saveCalendarImage();
-            },
-          ),
-        ],
-      ),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildCalendarSection(),
-          _buildMoodSection(),
-        ],
-      ),
+        );
+      },
     );
   }
 }

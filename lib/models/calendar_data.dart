@@ -12,19 +12,20 @@ class CalendarData {
         savedColors = savedColors ?? {};
 
   String getKey(int day, int month) {
-    if (month < 0 || month > 11) {
+    if (month < 1 || month > 12) {
       debugPrint('Invalid month value: $month, adjusting...');
-      month = month.clamp(0, 11);
+      month = month.clamp(1, 12);
     }
     return '${currentYear.year}-$month-$day';
   }
 
   Color? getSavedColor(int day, int month) {
-    if (month < 0 || month > 11) {
+    if (month < 1 || month > 12) {
       debugPrint('Invalid month value in getSavedColor: $month');
-      month = month.clamp(0, 11);
+      month = month.clamp(1, 12);
     }
     final key = getKey(day, month);
+    debugPrint('Getting color for key: $key');
     return savedColors[key];
   }
 
